@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+
+"""Accepts a list of glob patterns as input, where each glob is expected to
+match a single file. Outputs the list of resulting file paths for the cases
+where glob does match a single file. Non-default options can show missing
+globs or multi-hit globs."""
+
+
+import argparse
+from glob import glob
+from os.path import isfile, isdir
+from pathlib import Path
+from sys import stdin, stdout
+
+
+def main():
+    args = parse_args()
+    # print(args)
+    # print(args.input_file.readline())
+    run(args.input_file, args.mode)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('input_file',
+                        type=argparse.FileType('rb'),
+                        nargs='?',
+                        default=stdin)
+    parser.add_argument('--simple', action='store_const', dest='mode', const='simple', help='default')
+    parser.add_argument('--bad',    action='store_const', dest='mode', const='bad')
+    parser.add_argument('--multi',  action='store_const', dest='mode', const='multi')
+    parser.add_argument('--table',  action='store_const', dest='mode', const='table')
+    args = parser.parse_args()
+    if not args.mode:
+        args.mode = 'simple'
+    return args
+
+
+def run(input_file, mode):
+    for raw_line in input_file:
+        pattern = raw_line.rstrip(b'\r\n')
+        hits = glob(pattern)
+        if mode == 'simple':
+            if len(hits) == 1:
+                dump(hits[0])
+        elif mode == 'bad':
+            if len(hits) == 0:
+                dump(pattern)
+        elif mode == 'multi':
+            if len(hits) > 1:
+                dump(pattern)
+        elif mode == 'table':
+            if not hits:
+                hits = [b'']
+                code = b'missing'
+            elif len(hits) == 1:
+                code = b'good'
+            else:
+                code = b'multi'
+            for hit in hits:
+                ftype = get_type(hit)
+                dump(pattern, code, ftype, hit)
+        else:
+            assert False, 'We have a bug'
+
+
+def dump(*byte_data):
+    """Send to stdout buffer with newline byte."""
+    stdout.buffer.write(b'\t'.join(byte_data))
+    stdout.buffer.write(b'\n')
+
+
+def get_type(binary_path):
+    if isfile(binary_path):
+        result = b'file'
+    elif isdir(binary_path):
+        result = b'dir'
+    elif binary_path == b'':
+        result = b'missing'
+    else:
+        result = b'other'
+    return result
+
+
+if __name__ == '__main__':
+    main()

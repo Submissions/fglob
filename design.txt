@@ -1,0 +1,47 @@
+# Example inputs and outputs
+
+# input_file.list
+/hgsccl/next-gen/Illumina/Instruments/D00341/171220_D00341_0575_AH3GFMBCX2/Results/Project_171220_D00341_0575_AH3GFMBCX2/Sample_H3GFMBCX2-1-IDMB46/SNP/*SNPs_Annotated.vcf
+/hgsccl/next-gen/Illumina/Instruments/D00341/171220_D00341_0575_AH3GFMBCX2/Results/Project_171220_D00341_0575_AH3GFMBCX2/Sample_H3GFMBCX2-1-IDMB37/SNP/*SNPs_Annotated.vcf
+/hgsccl/next-gen/Illumina/Instruments/D00341/171220_D00341_0575_AH3GFMBCX2/Results/Project_171220_D00341_0575_AH3GFMBCX2/Sample_H3GFMBCX2-1-IDMB29/SNP/*SNPs_Annotated.vcf
+/hgsccl/next-gen/Illumina/Instruments/D00341/171220_D00341_0575_AH3GFMBCX2/Results/Project_171220_D00341_0575_AH3GFMBCX2/Sample_H3GFMBCX2-1-IDMB99/SNP/*SNPs_Annotated.vcf # multi-hit
+
+# stdout
+LINE: -rw-rw-rw- 2 blah blah /hgsccl/next-gen/Illumina/Instruments/D00341/171220_D00341_0575_AH3GFMBCX2/Results/Project_171220_D00341_0575_AH3GFMBCX2/Sample_H3GFMBCX2-1-IDMB46/SNP/foo_SNPs_Annotated.vcf
+LINE: -rw-rw-rw- 2 blah blah /hgsccl/next-gen/Illumina/Instruments/D00341/171220_D00341_0575_AH3GFMBCX2/Results/Project_171220_D00341_0575_AH3GFMBCX2/Sample_H3GFMBCX2-1-IDMB29/SNP/bar_SNPs_Annotated.vcf
+count is: 2
+
+
+# script.sh
+#!/bin/bash
+
+count=0
+while read LINE;
+  do 
+    if [ -f $LINE ]; then
+        echo -n "LINE: "
+        ls -lF $LINE
+        count=`expr $count + 1`
+    fi
+done < ./05_8_2018.resultPath.txt
+echo "count is: $count"
+
+
+fglob input_file.list
+/hgsccl/next-gen/Illumina/Instruments/D00341/171220_D00341_0575_AH3GFMBCX2/Results/Project_171220_D00341_0575_AH3GFMBCX2/Sample_H3GFMBCX2-1-IDMB46/SNP/foo_SNPs_Annotated.vcf
+/hgsccl/next-gen/Illumina/Instruments/D00341/171220_D00341_0575_AH3GFMBCX2/Results/Project_171220_D00341_0575_AH3GFMBCX2/Sample_H3GFMBCX2-1-IDMB29/SNP/bar_SNPs_Annotated.vcf
+
+fglob --bad input_file.list
+/hgsccl/next-gen/Illumina/Instruments/D00341/171220_D00341_0575_AH3GFMBCX2/Results/Project_171220_D00341_0575_AH3GFMBCX2/Sample_H3GFMBCX2-1-IDMB37/SNP/*SNPs_Annotated.vcf
+
+fglob --multi input_file.list
+/hgsccl/next-gen/Illumina/Instruments/D00341/171220_D00341_0575_AH3GFMBCX2/Results/Project_171220_D00341_0575_AH3GFMBCX2/Sample_H3GFMBCX2-1-IDMB99/SNP/*SNPs_Annotated.vcf
+
+fglob --table input_file.list
+...46/SNP/*SNPs_Annotated.vcf   good    ...46/SNP/foo_SNPs_Annotated.vcf
+...37/SNP/*SNPs_Annotated.vcf   missing (empty)
+...29/SNP/*SNPs_Annotated.vcf   good    ...29/SNP/bar_SNPs_Annotated.vcf
+...99/SNP/*SNPs_Annotated.vcf   multi   ...99/SNP/spam_SNPs_Annotated.vcf
+...99/SNP/*SNPs_Annotated.vcf   multi   ...99/SNP/eggs_SNPs_Annotated.vcf
+
+

@@ -1,0 +1,6 @@
+test/scenario_a/contents/*.tsv
+test/scenario_a/contents/*.dat
+test/scenario_a/contents/*.txt
+test/scenario_a/contents/*.list
+test/scenario_a/contents/*.zip
+*
